@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>Family Medicine Residency Attrition Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+html { -webkit-text-size-adjust:100%; text-size-adjust:100% }
+body {
+  font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background:#f7f5f0;
+  min-height:100vh;
+  padding:32px 16px 48px;
+  color:#2c2c2c;
+  line-height:1.5;
+}
+.container { max-width:540px; margin:0 auto }
+
+/* Header */
+.site-header { margin-bottom:32px; padding-bottom:20px; border-bottom:2px solid #253a5e }
+.site-header h1 {
+  font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+  font-size:26px; font-weight:700; color:#1a1a1a; line-height:1.2; margin-bottom:4px;
+}
+.site-header p { font-size:13px; color:#7a7a6e; letter-spacing:.02em; margin-top:2px }
+.site-header .authors { font-size:12px; font-weight:600; color:#5a5a52; margin-top:8px }
+
+/* Result hero */
+.result-hero {
+  background:linear-gradient(135deg,#1b2a4a 0%,#253a5e 100%);
+  border-radius:6px; padding:28px 28px 24px; margin-bottom:24px;
+  color:#fff; text-align:center; position:relative; overflow:hidden;
+}
+.result-hero::after {
+  content:''; position:absolute; top:0; right:0; width:140px; height:140px;
+  background:radial-gradient(circle at top right,rgba(255,255,255,.05),transparent 70%);
+  pointer-events:none;
+}
+.result-pct {
+  font-family:'Source Serif 4', Georgia, serif;
+  font-size:54px; font-weight:700; line-height:1; margin-bottom:4px;
+}
+.result-sub { font-size:15px; color:rgba(255,255,255,.7); margin-bottom:16px }
+.result-bar-track {
+  width:100%; height:6px; background:rgba(255,255,255,.12);
+  border-radius:3px; overflow:hidden; margin-bottom:14px;
+}
+.result-bar-fill {
+  height:100%; border-radius:3px; background:#d97706;
+  transition:width .4s ease;
+}
+.result-word { font-size:14px; font-weight:600 }
+
+/* Controls */
+.controls {
+  background:#fff; border:1px solid #e0ddd5; border-radius:6px;
+  padding:24px; margin-bottom:24px;
+}
+.control-group { margin-bottom:24px }
+.control-group:last-child { margin-bottom:0 }
+.control-top {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+}
+.control-top label {
+  font-size:13px; font-weight:600; color:#2c2c2c;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.control-val {
+  font-family:'Source Serif 4', Georgia, serif;
+  font-size:20px; font-weight:700; color:#1a1a1a;
+}
+.stepper { display:flex; align-items:center; gap:4px }
+.stepper button {
+  width:36px; height:36px; border-radius:4px;
+  border:1px solid #d4d0c8; background:#f7f5f0;
+  font-size:18px; font-weight:600; color:#555;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.stepper button:active { background:#e0ddd5 }
+.stepper input[type="number"] {
+  width:52px; height:36px; text-align:center;
+  border:1px solid #d4d0c8; border-radius:4px;
+  font-family:'DM Sans', sans-serif; font-size:16px;
+  font-weight:700; color:#1a1a1a; background:#fff;
+  -moz-appearance:textfield; outline:none;
+}
+.stepper input[type="number"]::-webkit-inner-spin-button,
+.stepper input[type="number"]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0 }
+
+/* Range sliders - use native styling, only accent-color for tinting */
+input[type="range"] {
+  display:block; width:100%; height:auto;
+  margin:8px 0; padding:0;
+  accent-color:#253a5e;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+.tick-marks {
+  display:flex; justify-content:space-between;
+  font-size:10px; color:#aaa69c; margin-top:2px; padding:0 2px;
+  user-select:none; -webkit-user-select:none;
+}
+.presets { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap }
+.preset {
+  padding:8px 14px; border-radius:3px;
+  font-size:11px; font-weight:600;
+  border:1px solid #d4d0c8; background:#fff; color:#7a7a6e;
+  text-transform:uppercase; letter-spacing:.03em;
+  cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.preset:active { background:#e8e5dc }
+.preset.on { background:#253a5e; color:#fff; border-color:#253a5e }
+.control-hint { font-size:11px; color:#aaa69c; margin-top:6px }
+
+/* Accordion */
+.accordion {
+  background:#fff; border:1px solid #e0ddd5; border-radius:6px;
+  margin-bottom:12px; overflow:hidden;
+}
+.acc-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:14px 20px; cursor:pointer;
+  user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.acc-header:active { background:#faf8f4 }
+.acc-header h3 {
+  font-size:13px; font-weight:600; color:#2c2c2c;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.acc-arrow { font-size:11px; color:#aaa69c; transition:transform .2s }
+.acc-arrow.open { transform:rotate(180deg) }
+.acc-body {
+  display:none; padding:0 20px 16px;
+  font-size:13px; color:#5a5a52; line-height:1.65;
+}
+.acc-body p { margin-bottom:8px }
+.acc-body p:last-child { margin-bottom:0 }
+.acc-body ul { margin:6px 0 8px 18px }
+.acc-body li { margin-bottom:4px }
+.acc-body a { color:#2c2c2c; text-decoration:underline; text-underline-offset:2px }
+
+/* Data table */
+.data-table { width:100%; border-collapse:collapse; margin:8px 0 }
+.data-table th {
+  padding:6px 8px; font-size:11px; font-weight:600; color:#7a7a6e;
+  text-align:center; border-bottom:1px solid #d4d0c8;
+  text-transform:uppercase; letter-spacing:.03em;
+}
+.data-table th:first-child { text-align:left }
+.data-table td {
+  padding:5px 8px; font-size:12px; text-align:center;
+  border-bottom:1px solid #eae7e0; color:#2c2c2c;
+}
+.data-table td:first-child { text-align:left; font-weight:500 }
+.data-table tr.total { font-weight:700 }
+.data-table tr.total td { border-top:2px solid #d4d0c8; padding-top:7px }
+
+/* Footer */
+.site-footer {
+  margin-top:24px; padding-top:16px;
+  border-top:1px solid #d4d0c8;
+  font-size:11px; color:#aaa69c; line-height:1.5; text-align:center;
+}
+.site-footer a { color:#7a7a6e }
+
+/* Responsive */
+@media (max-width:480px) {
+  body { padding:20px 12px 40px }
+  .site-header h1 { font-size:22px }
+  .result-hero { padding:22px 20px 20px }
+  .result-pct { font-size:42px }
+  .controls { padding:18px }
+  .presets { gap:4px }
+  .preset { padding:8px 10px; font-size:10px }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="site-header">
+<h1>Family Medicine Residency<br>Attrition Calculator</h1>
+<p class="authors">Chris L. Boswell, MD, FAAFP &middot; Cesar A. Gonzalez, PhD, MSCP, ABPP &middot; Matthew R. Meunier, MD, FAAFP</p>
+<p>Hope for the Best, Prepare for the Worst: A Step-by-Step Guide to Managing Resident Vacancies Outside the Match</p>
+<p>AAFP Residency Leadership Summit &middot; March 4, 2026</p>
+</div>
+
+<!-- Result -->
+<div class="result-hero">
+<div class="result-pct" id="resultPct">84%</div>
+<div class="result-sub" id="resultSub">chance of losing &ge;1 resident over 5 years</div>
+<div class="result-bar-track"><div class="result-bar-fill" id="resultFill" style="width:84%"></div></div>
+<div class="result-word" id="resultWord">Very likely</div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+
+<div class="control-group">
+<div class="control-top">
+<label>Program Size</label>
+<div class="stepper">
+<button type="button" id="sizeMinus" aria-label="Decrease size">&minus;</button>
+<input type="number" id="sizeInput" value="20" min="3" max="120" inputmode="numeric" pattern="[0-9]*">
+<button type="button" id="sizePlus" aria-label="Increase size">+</button>
+</div>
+</div>
+<input type="range" id="sizeSlider" min="3" max="60" value="20">
+<div class="presets" id="sizePresets">
+<button type="button" class="preset" data-size="18">6/yr (18)</button>
+<button type="button" class="preset" data-size="24">8/yr (24)</button>
+<button type="button" class="preset" data-size="30">10/yr (30)</button>
+<button type="button" class="preset" data-size="36">12/yr (36)</button>
+</div>
+<p class="control-hint">Total residents across all three PGY years</p>
+</div>
+
+<div class="control-group">
+<div class="control-top">
+<label>Time Window</label>
+<span class="control-val" id="yearDisplay">5 years</span>
+</div>
+<input type="range" id="yearSlider" min="1" max="10" step="1" value="5">
+<div class="tick-marks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+<p class="control-hint">One full training cycle = 3 years</p>
+</div>
+</div>
+
+<!-- Source Data -->
+<div class="accordion">
+<div class="acc-header" id="accData">
+<h3>Source Data</h3>
+<span class="acc-arrow" id="arrowData">&#9660;</span>
+</div>
+<div class="acc-body" id="bodyData">
+<p>Annual attrition rate used: <strong>1.87%</strong> (5-year national average for Family Medicine).</p>
+<table class="data-table">
+<thead><tr><th>Academic Year</th><th>Programs</th><th>Active Residents</th><th>Left Program</th><th>Rate</th></tr></thead>
+<tbody>
+<tr><td>2020&ndash;21</td><td>710</td><td>14,225</td><td>230</td><td>1.62%</td></tr>
+<tr><td>2021&ndash;22</td><td>722</td><td>14,657</td><td>268</td><td>1.83%</td></tr>
+<tr><td>2022&ndash;23</td><td>756</td><td>15,010</td><td>268</td><td>1.79%</td></tr>
+<tr><td>2023&ndash;24</td><td>778</td><td>15,341</td><td>315</td><td>2.05%</td></tr>
+<tr><td>2024&ndash;25</td><td>817</td><td>15,687</td><td>321</td><td>2.05%</td></tr>
+<tr class="total"><td>5-Year Average</td><td></td><td></td><td></td><td>1.87%</td></tr>
+</tbody>
+</table>
+<p style="margin-top:8px">Data from the <a href="https://www.acgme.org/about-us/publications-and-resources/graduate-medical-education-data-resource-book/" target="_blank" rel="noopener">ACGME Data Resource Book</a>, 2021&ndash;2025 editions (Section C.6, active residents; Section D.13, residents leaving prior to completion).</p>
+</div>
+</div>
+
+<!-- Assumptions & Limitations -->
+<div class="accordion">
+<div class="acc-header" id="accAssump">
+<h3>Assumptions &amp; Limitations</h3>
+<span class="acc-arrow" id="arrowAssump">&#9660;</span>
+</div>
+<div class="acc-body" id="bodyAssump">
+<p><strong>Assumptions</strong></p>
+<ul>
+<li>Each resident has the same independent annual probability of leaving, regardless of PGY year. In reality, attrition risk is highest during PGY-1 (~45% of departures) and lowest in PGY-3 (~20%).</li>
+<li>The national average rate applies equally to all programs. Individual programs may run significantly above or below this average based on program culture, location, and other factors.</li>
+<li>The attrition rate stays constant over the selected time window. Recent data suggest the rate may be trending upward (2.05% in AY 2023&ndash;25 vs. ~1.75% in AY 2020&ndash;23).</li>
+<li>Departures are immediately replaced, keeping program size constant throughout the window. Some programs may carry vacancies.</li>
+</ul>
+<p><strong>Limitations</strong></p>
+<ul>
+<li>&ldquo;Not completing program&rdquo; in the ACGME data includes voluntary departures, transfers to other programs or specialties, dismissals, and leaves of absence that result in non-completion. It does not distinguish between these categories.</li>
+<li>This is a population-level estimate. It cannot predict attrition for a specific resident or account for program-specific risk factors.</li>
+<li>The formula <em>P(&ge;1) = 1 &minus; (1 &minus; r)<sup>N&times;T</sup></em> treats attrition as a simple binomial process. More complex models (e.g., PGY-specific hazard rates, between-program heterogeneity) would yield slightly different estimates, though for typical FM program sizes the practical difference is modest.</li>
+<li>Small programs (&le;12 total residents) will experience high year-to-year variability around these estimates.</li>
+</ul>
+</div>
+</div>
+
+<!-- References -->
+<div class="accordion">
+<div class="acc-header" id="accRefs">
+<h3>References</h3>
+<span class="acc-arrow" id="arrowRefs">&#9660;</span>
+</div>
+<div class="acc-body" id="bodyRefs">
+<p>Boswell CL, Gonzalez CA, Meunier MR. Hope for the best, prepare for the worst: a step-by-step guide to managing resident vacancies outside the match. Presented at: AAFP Residency Leadership Summit; March 4, 2026.</p>
+<p>Accreditation Council for Graduate Medical Education. <em>ACGME Data Resource Book.</em> 2021&ndash;2025 editions. <a href="https://www.acgme.org/about-us/publications-and-resources/graduate-medical-education-data-resource-book/" target="_blank" rel="noopener">https://www.acgme.org/about-us/publications-and-resources/graduate-medical-education-data-resource-book/</a></p>
+<p>Wang JY, Lin PY, Goldberg NH, et al. Residency attrition and associated characteristics: a systematic review and meta-analysis. <em>Brain Neurol Disord.</em> 2022;5(4):1&ndash;12.</p>
+</div>
+</div>
+
+<div class="site-footer">
+Annual attrition rate: 1.87% &middot; ACGME Data Resource Book, 2021&ndash;2025
+</div>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  var N = 20;
+  var T = 5;
+  var RATE = 1.87;
+
+  // DOM refs
+  var sizeSlider  = document.getElementById("sizeSlider");
+  var sizeInput   = document.getElementById("sizeInput");
+  var sizeMinus   = document.getElementById("sizeMinus");
+  var sizePlus    = document.getElementById("sizePlus");
+  var yearSlider  = document.getElementById("yearSlider");
+  var yearDisplay = document.getElementById("yearDisplay");
+  var resultPct   = document.getElementById("resultPct");
+  var resultSub   = document.getElementById("resultSub");
+  var resultFill  = document.getElementById("resultFill");
+  var resultWord  = document.getElementById("resultWord");
+  var sizePresets = document.getElementById("sizePresets");
+
+  function getWord(p) {
+    if (p < .10) return "Very unlikely";
+    if (p < .20) return "Unlikely";
+    if (p < .35) return "Possible";
+    if (p < .50) return "Roughly a coin flip";
+    if (p < .65) return "More likely than not";
+    if (p < .80) return "Very likely";
+    if (p < .92) return "Highly likely";
+    return "Near certain";
+  }
+
+  function getWordColor(p) {
+    if (p < .30) return "rgba(255,255,255,.6)";
+    if (p < .50) return "#f0d060";
+    if (p < .70) return "#f0b050";
+    if (p < .85) return "#f08860";
+    return "#f07068";
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function update() {
+    var rr = RATE / 100;
+    var p = 1 - Math.pow(1 - rr, N * T);
+    var pct = Math.round(p * 100);
+
+    resultPct.textContent = pct + "%";
+    resultSub.textContent = "chance of losing \u22651 resident over " + (T === 1 ? "1 year" : T + " years");
+    resultFill.style.width = Math.min(p * 100, 100) + "%";
+    resultWord.textContent = getWord(p);
+    resultWord.style.color = getWordColor(p);
+
+    yearDisplay.textContent = T + (T === 1 ? " year" : " years");
+    sizeInput.value = N;
+    sizeSlider.value = Math.min(N, 60);
+
+    var btns = sizePresets.querySelectorAll(".preset");
+    for (var i = 0; i < btns.length; i++) {
+      var s = parseInt(btns[i].getAttribute("data-size"), 10);
+      btns[i].className = "preset" + (N === s ? " on" : "");
+    }
+  }
+
+  function setSize(v) {
+    N = clamp(parseInt(v, 10) || 20, 3, 120);
+    update();
+  }
+
+  function setYears(v) {
+    T = clamp(parseInt(v, 10) || 5, 1, 10);
+    update();
+  }
+
+  // Size slider
+  sizeSlider.addEventListener("input", function() { setSize(this.value); });
+  sizeSlider.addEventListener("change", function() { setSize(this.value); });
+
+  // Size input
+  sizeInput.addEventListener("change", function() { setSize(this.value); });
+  sizeInput.addEventListener("blur", function() { setSize(this.value); });
+
+  // Stepper buttons
+  sizeMinus.addEventListener("click", function() { setSize(N - 1); });
+  sizePlus.addEventListener("click", function() { setSize(N + 1); });
+
+  // Presets
+  var presetBtns = sizePresets.querySelectorAll(".preset");
+  for (var i = 0; i < presetBtns.length; i++) {
+    presetBtns[i].addEventListener("click", function() {
+      setSize(this.getAttribute("data-size"));
+    });
+  }
+
+  // Year slider
+  yearSlider.addEventListener("input", function() { setYears(this.value); });
+  yearSlider.addEventListener("change", function() { setYears(this.value); });
+
+  // Accordions
+  function setupAccordion(headerId, arrowId, bodyId) {
+    document.getElementById(headerId).addEventListener("click", function() {
+      var body = document.getElementById(bodyId);
+      var arrow = document.getElementById(arrowId);
+      if (body.style.display === "block") {
+        body.style.display = "none";
+        arrow.classList.remove("open");
+      } else {
+        body.style.display = "block";
+        arrow.classList.add("open");
+      }
+    });
+  }
+
+  setupAccordion("accData", "arrowData", "bodyData");
+  setupAccordion("accAssump", "arrowAssump", "bodyAssump");
+  setupAccordion("accRefs", "arrowRefs", "bodyRefs");
+
+  update();
+
+})();
+</script>
+</body>
+</html>
